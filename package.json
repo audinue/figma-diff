@@ -1,0 +1,19 @@
+{
+  "name": "figma-diff",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "view-test": "bun scripts/view-test.ts",
+    "server": "bun src/server-main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "playwright": "^1.61.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@figma/rest-api-spec": "^0.40.0"
+  }
+}
