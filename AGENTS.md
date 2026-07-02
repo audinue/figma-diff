@@ -54,14 +54,15 @@ bun run view-test
 - Runtime is Bun.
 - Tests live in `test/`.
 - `FigmaAPI` exposes only:
-  - `getFile(version?)`
+  - `getFile({ version?, depth })`
   - `getFileVersions()`
-- `FetchFigmaAPI.getFile()` fetches with `depth=3`.
+- `/diff` routes request Figma files with `depth=3`.
+- `FetchFigmaAPI.getFile()` must pass through the requested `depth`.
 - `/diff?version=<version-id>` compares selected version as `before` vs current file as `after`.
 - Figma links for historical/selected `before` nodes include `version-id`.
 - Figma links for current `after` nodes must not include `version-id`.
 - Default live server cache is SQLite via `SqliteCacheStorage`.
-- Cache keys for file responses must stay depth-aware when fetch depth changes.
+- Cache keys for file responses must be derived from `GetFileOptions`, including `depth`.
 - `server-main.ts` is the infra/composition root and owns env parsing plus concrete adapter wiring.
 - `server.ts` must stay dependency-injected and must not import concrete infra adapters like `FetchFigmaAPI`, `CachedFigmaAPI`, or `SqliteCacheStorage`.
 - `diffFigmaFiles(before, after)` is a pure function and should not know about HTTP, cache, env, or HTML.

@@ -3,13 +3,14 @@ import {
   CachedFigmaAPI,
   InMemoryCacheStorage,
   type FigmaAPI,
+  type GetFileOptions,
   type GetFileResponse,
   type GetFileVersionsResponse,
 } from "../src/index";
 
-function fileResponse(version: string): GetFileResponse {
+function fileResponse(version: string, depth = 3): GetFileResponse {
   return {
-    name: `File ${version}`,
+    name: `File ${version} depth ${depth}`,
     role: "owner",
     lastModified: "2026-06-30T00:00:00Z",
     editorType: "figma",
@@ -38,10 +39,12 @@ function versionsResponse(): GetFileVersionsResponse {
 class CountingFigmaAPI implements FigmaAPI {
   fileCalls = 0;
   versionsCalls = 0;
+  fileOptions: GetFileOptions[] = [];
 
-  async getFile(version?: string): Promise<GetFileResponse> {
+  async getFile(options: GetFileOptions): Promise<GetFileResponse> {
     this.fileCalls += 1;
-    return fileResponse(version ?? "current");
+    this.fileOptions.push(options);
+    return fileResponse(options.version ?? "current", options.depth);
   }
 
   async getFileVersions(): Promise<GetFileVersionsResponse> {
@@ -66,10 +69,15 @@ describe("CachedFigmaAPI", () => {
     const figmaAPI = new CountingFigmaAPI();
     const cachedAPI = new CachedFigmaAPI(new InMemoryCacheStorage(), figmaAPI);
 
-    await expect(cachedAPI.getFile()).resolves.toMatchObject({ version: "current" });
-    await expect(cachedAPI.getFile()).resolves.toMatchObject({ version: "current" });
+    await expect(cachedAPI.getFile({ depth: 3 })).resolves.toMatchObject({
+      version: "current",
+    });
+    await expect(cachedAPI.getFile({ depth: 3 })).resolves.toMatchObject({
+      version: "current",
+    });
 
     expect(figmaAPI.fileCalls).toBe(1);
+    expect(figmaAPI.fileOptions).toEqual([{ depth: 3 }]);
   });
 
   test("caches file versions response", async () => {
@@ -86,10 +94,37 @@ describe("CachedFigmaAPI", () => {
     const figmaAPI = new CountingFigmaAPI();
     const cachedAPI = new CachedFigmaAPI(new InMemoryCacheStorage(), figmaAPI);
 
-    await expect(cachedAPI.getFile("1")).resolves.toMatchObject({ version: "1" });
-    await expect(cachedAPI.getFile("2")).resolves.toMatchObject({ version: "2" });
-    await expect(cachedAPI.getFile("1")).resolves.toMatchObject({ version: "1" });
+    await expect(cachedAPI.getFile({ version: "1", depth: 3 })).resolves.toMatchObject({
+      version: "1",
+    });
+    await expect(cachedAPI.getFile({ version: "2", depth: 3 })).resolves.toMatchObject({
+      version: "2",
+    });
+    await expect(cachedAPI.getFile({ version: "1", depth: 3 })).resolves.toMatchObject({
+      version: "1",
+    });
 
     expect(figmaAPI.fileCalls).toBe(2);
+  });
+
+  test("caches different file depths separately", async () => {
+    const figmaAPI = new CountingFigmaAPI();
+    const cachedAPI = new CachedFigmaAPI(new InMemoryCacheStorage(), figmaAPI);
+
+    await expect(cachedAPI.getFile({ version: "1", depth: 2 })).resolves.toMatchObject({
+      name: "File 1 depth 2",
+    });
+    await expect(cachedAPI.getFile({ version: "1", depth: 3 })).resolves.toMatchObject({
+      name: "File 1 depth 3",
+    });
+    await expect(cachedAPI.getFile({ version: "1", depth: 2 })).resolves.toMatchObject({
+      name: "File 1 depth 2",
+    });
+
+    expect(figmaAPI.fileCalls).toBe(2);
+    expect(figmaAPI.fileOptions).toEqual([
+      { version: "1", depth: 2 },
+      { version: "1", depth: 3 },
+    ]);
   });
 });

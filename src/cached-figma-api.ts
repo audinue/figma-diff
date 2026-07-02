@@ -1,12 +1,11 @@
 import type { CacheStorage } from "./cache-storage";
 import type {
   FigmaAPI,
+  GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
 } from "./figma-api";
 
-const fileCacheNamespace = "figma:file:depth3";
-const currentFileCacheKey = `${fileCacheNamespace}:current`;
 const versionsCacheKey = "figma:file:versions";
 
 export class CachedFigmaAPI implements FigmaAPI {
@@ -15,10 +14,10 @@ export class CachedFigmaAPI implements FigmaAPI {
     private readonly figmaAPI: FigmaAPI,
   ) {}
 
-  async getFile(version?: string): Promise<GetFileResponse> {
+  async getFile(options: GetFileOptions): Promise<GetFileResponse> {
     return this.getOrSet(
-      version === undefined ? currentFileCacheKey : `${fileCacheNamespace}:${version}`,
-      () => this.figmaAPI.getFile(version),
+      fileCacheKey(options),
+      () => this.figmaAPI.getFile(options),
     );
   }
 
@@ -36,4 +35,11 @@ export class CachedFigmaAPI implements FigmaAPI {
     await this.cacheStorage.set(key, JSON.stringify(value));
     return value;
   }
+}
+
+function fileCacheKey(options: GetFileOptions): string {
+  const fileCacheNamespace = `figma:file:depth${options.depth}`;
+  return options.version === undefined
+    ? `${fileCacheNamespace}:current`
+    : `${fileCacheNamespace}:${options.version}`;
 }

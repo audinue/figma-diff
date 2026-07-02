@@ -4,6 +4,8 @@ import { renderDiffResultView } from "./diff-result-view";
 import { renderLayoutView } from "./layout-view";
 import { renderVersionListView } from "./version-list-view";
 
+const figmaFileDepth = 3;
+
 export type FigmaDiffServerDependencies = {
   figmaAPI: FigmaAPI;
   fileKey: string;
@@ -45,8 +47,11 @@ export function createFigmaDiffHandler(
 
       if (selectedVersion !== null) {
         const [selected, current] = await Promise.all([
-          dependencies.figmaAPI.getFile(selectedVersion),
-          dependencies.figmaAPI.getFile(),
+          dependencies.figmaAPI.getFile({
+            version: selectedVersion,
+            depth: figmaFileDepth,
+          }),
+          dependencies.figmaAPI.getFile({ depth: figmaFileDepth }),
         ]);
         const diff = diffFigmaFiles(selected, current);
 
@@ -72,8 +77,14 @@ export function createFigmaDiffHandler(
       }
 
       const [before, after] = await Promise.all([
-        dependencies.figmaAPI.getFile(beforeVersion),
-        dependencies.figmaAPI.getFile(afterVersion),
+        dependencies.figmaAPI.getFile({
+          version: beforeVersion,
+          depth: figmaFileDepth,
+        }),
+        dependencies.figmaAPI.getFile({
+          version: afterVersion,
+          depth: figmaFileDepth,
+        }),
       ]);
       const diff = diffFigmaFiles(before, after);
 

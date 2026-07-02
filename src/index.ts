@@ -1,5 +1,6 @@
 export {
   type FigmaAPI,
+  type GetFileOptions,
   type GetFileResponse,
   type GetFileVersionsResponse,
 } from "./figma-api";

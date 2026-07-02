@@ -1,5 +1,6 @@
 import type {
   FigmaAPI,
+  GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
 } from "./figma-api";
@@ -32,14 +33,14 @@ export class InMemoryFigmaAPI implements FigmaAPI {
     this.filesByVersion = buildFilesByVersion(options.filesByVersion);
   }
 
-  async getFile(version?: string): Promise<GetFileResponse> {
-    if (version === undefined) {
+  async getFile(options: GetFileOptions): Promise<GetFileResponse> {
+    if (options.version === undefined) {
       return this.currentFile;
     }
 
-    const file = (await this.filesByVersion).get(version);
+    const file = (await this.filesByVersion).get(options.version);
     if (file === undefined) {
-      throw new Error(`Figma file version not found: ${version}`);
+      throw new Error(`Figma file version not found: ${options.version}`);
     }
 
     return file;

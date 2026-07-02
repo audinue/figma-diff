@@ -1,5 +1,6 @@
 import type {
   FigmaAPI,
+  GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
 } from "./figma-api";
@@ -18,12 +19,12 @@ export class FetchFigmaAPI implements FigmaAPI {
     this.accessToken = options.accessToken;
   }
 
-  async getFile(version?: string): Promise<GetFileResponse> {
+  async getFile(options: GetFileOptions): Promise<GetFileResponse> {
     const url = new URL(`https://api.figma.com/v1/files/${this.fileKey}`);
-    url.searchParams.set("depth", "3");
+    url.searchParams.set("depth", String(options.depth));
 
-    if (version !== undefined) {
-      url.searchParams.set("version", version);
+    if (options.version !== undefined) {
+      url.searchParams.set("version", options.version);
     }
 
     return fetchFigma<GetFileResponse>(url, this.accessToken);

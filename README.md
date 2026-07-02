@@ -56,7 +56,8 @@ Output disimpan ke `screenshots/`.
 
 - Version list membuka `/diff?version=<version-id>`.
 - Diff membandingkan selected version sebagai `before` dengan current Figma file sebagai `after`.
-- Fetch file pakai `depth=3`.
+- Diff routes fetch file pakai `depth=3`.
+- Cache key file response pakai `depth` dari request options.
 - Link Figma untuk `before` pakai `version-id`.
 - Link Figma untuk `after` / current tidak pakai `version-id`.
 

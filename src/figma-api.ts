@@ -5,7 +5,12 @@ import type {
 
 export type { GetFileResponse, GetFileVersionsResponse };
 
+export type GetFileOptions = {
+  version?: string;
+  depth: number;
+};
+
 export interface FigmaAPI {
-  getFile(version?: string): Promise<GetFileResponse>;
+  getFile(options: GetFileOptions): Promise<GetFileResponse>;
   getFileVersions(): Promise<GetFileVersionsResponse>;
 }
