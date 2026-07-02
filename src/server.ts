@@ -1,11 +1,8 @@
-import { CachedFigmaAPI } from "./cached-figma-api";
 import { diffFigmaFiles } from "./figma-diff";
 import type { FigmaAPI } from "./figma-api";
-import { FetchFigmaAPI } from "./fetch-figma-api";
 import { renderDiffResultView } from "./diff-result-view";
 import { renderLayoutView } from "./layout-view";
 import { renderVersionListView } from "./version-list-view";
-import { SqliteCacheStorage } from "./sqlite-cache-storage";
 
 export type FigmaDiffServerDependencies = {
   figmaAPI: FigmaAPI;
@@ -108,33 +105,6 @@ export function createFigmaDiffServer(
     idleTimeout: 0,
     fetch: createFigmaDiffHandler(dependencies),
   });
-}
-
-export function createFigmaDiffServerFromEnv(
-  options: FigmaDiffServerOptions = {},
-): ReturnType<typeof Bun.serve> {
-  const accessToken = process.env.FIGMA_ACCESS_TOKEN;
-  const fileKey = process.env.FIGMA_FILE_KEY;
-  const fileName = process.env.FIGMA_FILE_NAME;
-
-  if (!accessToken || !fileKey) {
-    throw new Error("FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY must be set");
-  }
-
-  return createFigmaDiffServer(
-    {
-      fileKey,
-      fileName,
-      figmaAPI: new CachedFigmaAPI(
-        new SqliteCacheStorage(),
-        new FetchFigmaAPI({
-          accessToken,
-          fileKey,
-        }),
-      ),
-    },
-    options,
-  );
 }
 
 function htmlResponse(markup: string, status = 200): Response {

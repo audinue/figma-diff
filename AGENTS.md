@@ -9,12 +9,14 @@ Repo ini adalah Bun/TypeScript app untuk diff Figma file versions.
 Core flow:
 
 ```text
+server-main
+  -> wires concrete infra:
+     CachedFigmaAPI + SqliteCacheStorage + FetchFigmaAPI
+  -> injects FigmaAPI into server
+
 HTTP request
   -> server
-  -> FigmaAPI
-     -> CachedFigmaAPI
-        -> CacheStorage
-        -> FetchFigmaAPI / InMemoryFigmaAPI
+  -> injected FigmaAPI
   -> diffFigmaFiles
   -> view renderer
   -> layout HTML
@@ -60,6 +62,8 @@ bun run view-test
 - Figma links for current `after` nodes must not include `version-id`.
 - Default live server cache is SQLite via `SqliteCacheStorage`.
 - Cache keys for file responses must stay depth-aware when fetch depth changes.
+- `server-main.ts` is the infra/composition root and owns env parsing plus concrete adapter wiring.
+- `server.ts` must stay dependency-injected and must not import concrete infra adapters like `FetchFigmaAPI`, `CachedFigmaAPI`, or `SqliteCacheStorage`.
 - `diffFigmaFiles(before, after)` is a pure function and should not know about HTTP, cache, env, or HTML.
 - Views are plain tagged-template renderers and should not fetch data.
 - Server should stay dependency-injected so tests can use `InMemoryFigmaAPI`.

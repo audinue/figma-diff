@@ -30,10 +30,10 @@ export {
 export {
   createFigmaDiffHandler,
   createFigmaDiffServer,
-  createFigmaDiffServerFromEnv,
   type FigmaDiffServerDependencies,
   type FigmaDiffServerOptions,
 } from "./server";
+export { createFigmaDiffServerFromEnv } from "./server-main";
 export {
   FetchFigmaAPI,
   type FetchFigmaAPIOptions,
