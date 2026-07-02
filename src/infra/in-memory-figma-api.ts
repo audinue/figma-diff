@@ -3,12 +3,12 @@ import type {
   GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
-} from "./figma-api";
+} from "../core/figma-api";
 import {
   sampleCurrentFile,
   sampleOlderFile,
   sampleVersions,
-} from "./sample-figma-data";
+} from "../core/sample-figma-data";
 
 export type InMemoryFigmaAPIOptions = {
   currentFile?: GetFileResponse;

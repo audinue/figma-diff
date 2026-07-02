@@ -1,15 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import {
-  diffFigmaFiles,
-  renderLayoutView,
-  renderDiffResultView,
-  renderVersionListView,
-} from "../src/index";
+import { renderDiffResultView } from "../src/core/diff-result-view";
+import { diffFigmaFiles } from "../src/core/figma-diff";
+import { renderLayoutView } from "../src/core/layout-view";
 import {
   sampleCurrentFile,
   sampleOlderFile,
   sampleVersions,
-} from "../src/sample-figma-data";
+} from "../src/core/sample-figma-data";
+import { renderVersionListView } from "../src/core/version-list-view";
 
 describe("renderVersionListView", () => {
   test("renders version links to diff page", () => {

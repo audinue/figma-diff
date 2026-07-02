@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
+import type { GetFileResponse } from "../src/core/figma-api";
 import {
   diffFigmaFiles,
   type FigmaDiffPage,
-  type GetFileResponse,
-} from "../src/index";
+} from "../src/core/figma-diff";
 import {
   sampleCurrentFile,
   sampleOlderFile,
-} from "../src/sample-figma-data";
+} from "../src/core/sample-figma-data";
 
 function nestedFile(childX: number): GetFileResponse {
   return {

@@ -3,7 +3,7 @@ import type {
   GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
-} from "./figma-api";
+} from "../core/figma-api";
 
 export type FetchFigmaAPIOptions = {
   fileKey: string;

@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  createFigmaDiffServer,
-  InMemoryFigmaAPI,
-} from "../src/index";
+import { createFigmaDiffServer } from "../src/core/server";
+import { InMemoryFigmaAPI } from "../src/infra/in-memory-figma-api";
 
 const servers: ReturnType<typeof createFigmaDiffServer>[] = [];
 

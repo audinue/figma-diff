@@ -9,13 +9,13 @@ Repo ini adalah Bun/TypeScript app untuk diff Figma file versions.
 Core flow:
 
 ```text
-server-main
+src/index.ts
   -> wires concrete infra:
      CachedFigmaAPI + SqliteCacheStorage + FetchFigmaAPI
   -> injects FigmaAPI into server
 
 HTTP request
-  -> server
+  -> src/core/server.ts
   -> injected FigmaAPI
   -> diffFigmaFiles
   -> view renderer
@@ -63,8 +63,11 @@ bun run view-test
 - Figma links for current `after` nodes must not include `version-id`.
 - Default live server cache is SQLite via `SqliteCacheStorage`.
 - Cache keys for file responses must be derived from `GetFileOptions`, including `depth`.
-- `server-main.ts` is the infra/composition root and owns env parsing plus concrete adapter wiring.
-- `server.ts` must stay dependency-injected and must not import concrete infra adapters like `FetchFigmaAPI`, `CachedFigmaAPI`, or `SqliteCacheStorage`.
+- `src/index.ts` is the app entrypoint and composition root; it should start the server, not act as a library barrel.
+- `src/infra/` contains concrete adapters.
+- `src/core/` contains the FigmaAPI contract, HTTP app orchestration, diff, and view renderers.
+- `src/index.ts` owns env parsing plus concrete adapter wiring.
+- `src/core/server.ts` must stay dependency-injected and must not import concrete infra adapters like `FetchFigmaAPI`, `CachedFigmaAPI`, or `SqliteCacheStorage`.
 - `diffFigmaFiles(before, after)` is a pure function and should not know about HTTP, cache, env, or HTML.
 - Views are plain tagged-template renderers and should not fetch data.
 - Server should stay dependency-injected so tests can use `InMemoryFigmaAPI`.
@@ -97,8 +100,8 @@ Use random placeholder values in `.env.example`, README, tests, and scripts.
 Keep dependency direction simple:
 
 ```text
-server-main -> server + concrete adapters
-server -> FigmaAPI + diff + views
+index -> core/server + concrete adapters
+core/server -> FigmaAPI + diff + views
 views -> diff types
 diff -> GetFileResponse type
 fetch/cache/sqlite/in-memory -> interfaces

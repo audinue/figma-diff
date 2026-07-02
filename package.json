@@ -4,7 +4,7 @@
   "scripts": {
     "test": "bun test",
     "view-test": "bun scripts/view-test.ts",
-    "server": "bun src/server-main.ts"
+    "server": "bun src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

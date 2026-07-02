@@ -68,23 +68,23 @@ flowchart LR
   request([HTTP request])
 
   subgraph infra["Infrastructure"]
-    main["src/server-main.ts"]
-    cached["src/cached-figma-api.ts"]
-    fetch["src/fetch-figma-api.ts"]
-    sqlite["src/sqlite-cache-storage.ts"]
-    memoryApi["src/in-memory-figma-api.ts"]
-    memoryCache["src/in-memory-cache-storage.ts"]
-    cacheStorage["src/cache-storage.ts"]
+    main["src/index.ts"]
+    cached["src/infra/cached-figma-api.ts"]
+    fetch["src/infra/fetch-figma-api.ts"]
+    sqlite["src/infra/sqlite-cache-storage.ts"]
+    memoryApi["src/infra/in-memory-figma-api.ts"]
+    memoryCache["src/infra/in-memory-cache-storage.ts"]
+    cacheStorage["src/infra/cache-storage.ts"]
   end
 
   subgraph core["Core"]
-    server["src/server.ts"]
-    diff["src/figma-diff.ts"]
-    versionList["src/version-list-view.ts"]
-    diffResult["src/diff-result-view.ts"]
-    layout["src/layout-view.ts"]
-    html["src/html.ts"]
-    figmaApi["src/figma-api.ts"]
+    server["src/core/server.ts"]
+    diff["src/core/figma-diff.ts"]
+    versionList["src/core/version-list-view.ts"]
+    diffResult["src/core/diff-result-view.ts"]
+    layout["src/core/layout-view.ts"]
+    html["src/core/html.ts"]
+    figmaApi["src/core/figma-api.ts"]
   end
 
   request --> server

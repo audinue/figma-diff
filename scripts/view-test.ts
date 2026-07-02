@@ -1,16 +1,14 @@
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
-import {
-  diffFigmaFiles,
-  renderDiffResultView,
-  renderLayoutView,
-  renderVersionListView,
-} from "../src";
+import { renderDiffResultView } from "../src/core/diff-result-view";
+import { diffFigmaFiles } from "../src/core/figma-diff";
+import { renderLayoutView } from "../src/core/layout-view";
 import {
   sampleCurrentFile,
   sampleOlderFile,
   sampleVersions,
-} from "../src/sample-figma-data";
+} from "../src/core/sample-figma-data";
+import { renderVersionListView } from "../src/core/version-list-view";
 
 const fileKey = process.env.FIGMA_FILE_KEY ?? "AbCdEfGhIjKlMnOpQrStUv";
 const fileName = process.env.FIGMA_FILE_NAME ?? "Example-Figma-File";

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import {
-  CachedFigmaAPI,
-  InMemoryCacheStorage,
-  type FigmaAPI,
-  type GetFileOptions,
-  type GetFileResponse,
-  type GetFileVersionsResponse,
-} from "../src/index";
+import { CachedFigmaAPI } from "../src/infra/cached-figma-api";
+import { InMemoryCacheStorage } from "../src/infra/in-memory-cache-storage";
+import type {
+  FigmaAPI,
+  GetFileOptions,
+  GetFileResponse,
+  GetFileVersionsResponse,
+} from "../src/core/figma-api";
 
 function fileResponse(version: string, depth = 3): GetFileResponse {
   return {

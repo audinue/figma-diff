@@ -4,7 +4,7 @@ import type {
   GetFileOptions,
   GetFileResponse,
   GetFileVersionsResponse,
-} from "./figma-api";
+} from "../core/figma-api";
 
 const versionsCacheKey = "figma:file:versions";
 
