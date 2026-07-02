@@ -64,58 +64,48 @@ Output disimpan ke `screenshots/`.
 ## Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
   request([HTTP request])
 
-  subgraph infra["Infrastructure / composition root"]
+  subgraph infra["Infrastructure"]
     main["src/server-main.ts"]
     cached["src/cached-figma-api.ts"]
     fetch["src/fetch-figma-api.ts"]
     sqlite["src/sqlite-cache-storage.ts"]
-  end
-
-  subgraph testInfra["Test adapters"]
     memoryApi["src/in-memory-figma-api.ts"]
     memoryCache["src/in-memory-cache-storage.ts"]
+    cacheStorage["src/cache-storage.ts"]
   end
 
-  subgraph app["HTTP application"]
+  subgraph core["Core"]
     server["src/server.ts"]
-  end
-
-  subgraph core["Core diff"]
     diff["src/figma-diff.ts"]
-  end
-
-  subgraph views["HTML views"]
     versionList["src/version-list-view.ts"]
     diffResult["src/diff-result-view.ts"]
     layout["src/layout-view.ts"]
     html["src/html.ts"]
-  end
-
-  subgraph contracts["Contracts"]
     figmaApi["src/figma-api.ts"]
-    cacheStorage["src/cache-storage.ts"]
   end
 
   request --> server
+
   main --> server
   main --> cached
   main --> fetch
   main --> sqlite
+
+  cached --> cacheStorage
+  cached --> figmaApi
+  fetch --> figmaApi
+  sqlite --> cacheStorage
+  memoryApi --> figmaApi
+  memoryCache --> cacheStorage
+
   server --> figmaApi
   server --> diff
   server --> versionList
   server --> diffResult
   server --> layout
-
-  cached --> cacheStorage
-  cached --> figmaApi
-  fetch --> figmaApi
-  memoryApi --> figmaApi
-  sqlite --> cacheStorage
-  memoryCache --> cacheStorage
 
   diff --> figmaApi
   versionList --> figmaApi
