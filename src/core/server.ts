@@ -128,7 +128,10 @@ export function createFigmaDiffHandler(
         return htmlResponse(
           renderLayoutView({
             title: "Figma Changes Since",
-            body: renderChangesSinceView(changes),
+            body: renderChangesSinceView(changes, {
+              fileKey: dependencies.fileKey,
+              fileName: dependencies.fileName,
+            }),
           }),
         );
       } catch (error) {

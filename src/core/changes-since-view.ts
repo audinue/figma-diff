@@ -6,7 +6,15 @@ import type {
 import type { FigmaDiffChange, FigmaDiffFrame, FigmaDiffValue } from "./figma-diff";
 import { html, raw } from "./html";
 
-export function renderChangesSinceView(result: ChangesSinceResult): string {
+export type ChangesSinceViewOptions = {
+  fileKey: string;
+  fileName?: string;
+};
+
+export function renderChangesSinceView(
+  result: ChangesSinceResult,
+  options: ChangesSinceViewOptions,
+): string {
   return html`
     <main class="changes-since">
       <header class="changes-since__header">
@@ -28,7 +36,7 @@ export function renderChangesSinceView(result: ChangesSinceResult): string {
         : raw(html`
           <section class="changes-since__nodes" aria-label="Changed top-level nodes">
             ${result.topLevelNodes.map((node, index) =>
-              raw(renderTopLevelNode(node, index === 0)),
+              raw(renderTopLevelNode(node, options, index === 0)),
             )}
           </section>
         `)}
@@ -38,6 +46,7 @@ export function renderChangesSinceView(result: ChangesSinceResult): string {
 
 function renderTopLevelNode(
   node: ChangesSinceTopLevelNode,
+  options: ChangesSinceViewOptions,
   open: boolean,
 ): string {
   return html`
@@ -50,27 +59,33 @@ function renderTopLevelNode(
         <em>${node.steps.length} steps</em>
       </summary>
       <div class="changes-node__body">
-        ${node.steps.map((step) => raw(renderNodeStep(step)))}
+        ${node.steps.map((step) => raw(renderNodeStep(step, options)))}
       </div>
     </details>
   `;
 }
 
-function renderNodeStep(step: ChangesSinceTopLevelNodeStep): string {
+function renderNodeStep(
+  step: ChangesSinceTopLevelNodeStep,
+  options: ChangesSinceViewOptions,
+): string {
   return html`
     <article class="changes-step">
       <header>
         <h2>${versionLabel(step.before)} -> ${versionLabel(step.after)}</h2>
         <p>${formatVersionDate(step.before.createdAt)} -> ${formatVersionDate(step.after.createdAt)}</p>
       </header>
-      ${raw(renderPageChange(step))}
+      ${raw(renderPageChange(step, options))}
     </article>
   `;
 }
 
-function renderPageChange(step: ChangesSinceTopLevelNodeStep): string {
+function renderPageChange(
+  step: ChangesSinceTopLevelNodeStep,
+  options: ChangesSinceViewOptions,
+): string {
   if ("frames" in step.page) {
-    return renderChangedPage(step.page.pageChanges, step.page.frames);
+    return renderChangedPage(step.page.pageChanges, step.page.frames, options);
   }
 
   return renderWholePageChange(step.page.status, step.page.page.topFrames.length);
@@ -87,6 +102,7 @@ function renderWholePageChange(status: "added" | "removed", topFrameCount: numbe
 function renderChangedPage(
   pageChanges: FigmaDiffChange[],
   frames: FigmaDiffFrame[],
+  options: ChangesSinceViewOptions,
 ): string {
   return html`
     ${pageChanges.length === 0
@@ -102,19 +118,25 @@ function renderChangedPage(
       : raw(html`
         <section class="changes-step__section">
           <h3>Child nodes</h3>
-          ${frames.map((frame) => raw(renderFrame(frame)))}
+          ${frames.map((frame) => raw(renderFrame(frame, options)))}
         </section>
       `)}
   `;
 }
 
-function renderFrame(frame: FigmaDiffFrame): string {
+function renderFrame(
+  frame: FigmaDiffFrame,
+  options: ChangesSinceViewOptions,
+): string {
   if (frame.status === "changed") {
     return html`
       <details class="changes-frame">
         <summary>
-          <strong>~ ${frame.beforeName === frame.name ? frame.name : `${frame.beforeName} -> ${frame.name}`}</strong>
-          <small>${frame.id}</small>
+          <span class="changes-frame__summary-text">
+            <strong>~ ${frame.beforeName === frame.name ? frame.name : `${frame.beforeName} -> ${frame.name}`}</strong>
+            <small>${frame.id}</small>
+          </span>
+          <a class="changes-frame__button" href="${figmaNodeUrl(options, frame.id)}" target="_blank" rel="noreferrer">Open current frame</a>
         </summary>
         <div class="changes-frame__changes">
           ${frame.changes.map((change) => raw(renderChange(change)))}
@@ -126,8 +148,13 @@ function renderFrame(frame: FigmaDiffFrame): string {
   return html`
     <details class="changes-frame">
       <summary>
-        <strong>${frame.status === "added" ? "+" : "-"} ${frame.frame.name}</strong>
-        <small>${frame.frame.type} · ${frame.frame.id}</small>
+        <span class="changes-frame__summary-text">
+          <strong>${frame.status === "added" ? "+" : "-"} ${frame.frame.name}</strong>
+          <small>${frame.frame.type} · ${frame.frame.id}</small>
+        </span>
+        ${frame.status === "added"
+          ? raw(html`<a class="changes-frame__button" href="${figmaNodeUrl(options, frame.frame.id)}" target="_blank" rel="noreferrer">Open current frame</a>`)
+          : ""}
       </summary>
     </details>
   `;
@@ -167,4 +194,15 @@ function formatVersionDate(value: string): string {
 
 function formatValue(value: FigmaDiffValue): string {
   return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function figmaNodeUrl(options: ChangesSinceViewOptions, nodeId: string): string {
+  const filePath = options.fileName === undefined || options.fileName === ""
+    ? encodeURIComponent(options.fileKey)
+    : `${encodeURIComponent(options.fileKey)}/${encodeURIComponent(options.fileName)}`;
+  const params = new URLSearchParams();
+
+  params.set("node-id", nodeId.replaceAll(":", "-"));
+
+  return `https://www.figma.com/design/${filePath}?${params.toString()}`;
 }

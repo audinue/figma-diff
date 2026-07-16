@@ -109,6 +109,13 @@ describe("Figma diff server", () => {
     expect(html).toContain("Receiving");
     expect(html).toContain("Middle");
     expect(html).toContain("2369347764861345445");
+    expect(html).toContain("Open current frame");
+    expect(html).toContain(
+      "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?node-id=4780-383317",
+    );
+    expect(html).not.toContain(
+      "version-id=2369347764861345445&amp;node-id=4780-383317",
+    );
   });
 
   test("returns 400 when changes-since version is missing", async () => {

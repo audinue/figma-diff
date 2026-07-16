@@ -417,12 +417,12 @@ code {
 }
 
 .changes-node summary span,
-.changes-frame summary {
+.changes-frame__summary-text {
   min-width: 0;
 }
 
 .changes-node summary strong,
-.changes-frame summary strong {
+.changes-frame__summary-text strong {
   display: block;
   overflow-wrap: anywhere;
 }
@@ -464,6 +464,27 @@ code {
 .changes-frame__changes {
   border-top: 1px solid var(--line);
   padding: 10px;
+}
+
+.changes-frame__button {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--panel);
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
+.changes-frame__button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.changes-frame__button:visited {
+  color: var(--panel);
 }
 
 .changes-change {
