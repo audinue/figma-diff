@@ -4,6 +4,7 @@ import { html, raw } from "./html";
 export type VersionListViewOptions = {
   title?: string;
   diffPath?: string;
+  changesSincePath?: string;
 };
 
 export function renderVersionListView(
@@ -12,16 +13,24 @@ export function renderVersionListView(
 ): string {
   const title = options.title ?? "Figma Versions";
   const diffPath = options.diffPath ?? "/diff";
+  const changesSincePath = options.changesSincePath ?? "/changes-since";
   const versions = versionsResponse.versions;
 
   return html`
     <main class="version-list">
       <header class="version-list__header">
-        <h1>${title}</h1>
-        <p>${versions.length} versions</p>
+        <div>
+          <h1>${title}</h1>
+          <p>${versions.length} versions</p>
+        </div>
+        <form action="/clear-versions" method="post">
+          <button type="submit">Clear versions</button>
+        </form>
       </header>
       <ol class="version-list__items">
-        ${versions.map((version) => raw(renderVersionItem(version, diffPath)))}
+        ${versions.map((version) =>
+          raw(renderVersionItem(version, diffPath, changesSincePath)),
+        )}
       </ol>
     </main>
   `;
@@ -32,17 +41,22 @@ type Version = GetFileVersionsResponse["versions"][number];
 function renderVersionItem(
   version: Version,
   diffPath: string,
+  changesSincePath: string,
 ): string {
   const label = version.label ?? version.id;
   const description = version.description ?? "";
   const user = version.user.handle;
   const href = `${diffPath}?version=${encodeURIComponent(version.id)}`;
+  const changesSinceHref = `${changesSincePath}?version=${encodeURIComponent(version.id)}`;
   return html`
     <li class="version-list__item">
-      <a href="${href}">
+      <div class="version-list__content">
         ${raw(renderVersionBody(label, version.created_at, user, description))}
-        <span class="version-list__meta">Compare current file with this version</span>
-      </a>
+        <span class="version-list__actions">
+          <a href="${href}">Compare with current</a>
+          <a href="${changesSinceHref}">Changes since this version</a>
+        </span>
+      </div>
     </li>
   `;
 }

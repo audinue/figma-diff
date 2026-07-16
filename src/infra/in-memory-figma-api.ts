@@ -49,6 +49,8 @@ export class InMemoryFigmaAPI implements FigmaAPI {
   async getFileVersions(): Promise<GetFileVersionsResponse> {
     return this.versions;
   }
+
+  async clearFileVersionsCache(): Promise<void> {}
 }
 
 async function buildFilesByVersion(

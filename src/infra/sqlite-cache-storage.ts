@@ -32,6 +32,12 @@ export class SqliteCacheStorage implements CacheStorage {
       .run(key, value);
   }
 
+  async delete(key: string): Promise<void> {
+    this.db
+      .query("DELETE FROM cache WHERE key = ?")
+      .run(key);
+  }
+
   close(): void {
     this.db.close();
   }

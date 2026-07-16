@@ -75,16 +75,28 @@ p {
 }
 
 .version-list__header,
-.diff-result__header {
+.diff-result__header,
+.changes-since__header {
+  align-items: end;
   border-bottom: 2px solid var(--ink);
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  justify-content: space-between;
   margin-bottom: 18px;
   padding-bottom: 18px;
 }
 
+.diff-result__header,
+.changes-since__header {
+  align-items: start;
+  display: grid;
+  justify-content: stretch;
+}
+
 .version-list__header h1,
-.diff-result__header h1 {
+.diff-result__header h1,
+.changes-since__header h1 {
   font-size: clamp(34px, 5vw, 72px);
   font-weight: 800;
   letter-spacing: 0;
@@ -93,10 +105,25 @@ p {
 }
 
 .version-list__header p,
-.diff-result__header p {
+.diff-result__header p,
+.changes-since__header p {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   margin: 0;
+}
+
+.version-list__header button {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--panel);
+  cursor: pointer;
+  font: 800 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 10px 12px;
+}
+
+.version-list__header button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .version-list__items {
@@ -113,7 +140,7 @@ p {
   border-left: 6px solid var(--accent);
 }
 
-.version-list__item a,
+.version-list__content,
 .version-list__item--disabled {
   color: inherit;
   display: grid;
@@ -122,8 +149,15 @@ p {
   text-decoration: none;
 }
 
-.version-list__item a:visited,
-.version-list__item a:visited .version-list__title {
+.version-list__actions {
+  display: flex;
+  flex-wrap: wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  gap: 12px;
+}
+
+.version-list__actions a:visited {
   color: var(--visited);
 }
 
@@ -325,6 +359,139 @@ code {
   white-space: pre-wrap;
 }
 
+.changes-since__summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.changes-since__summary > div,
+.changes-node,
+.changes-step,
+.changes-frame {
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.changes-since__summary > div {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.changes-since__summary span,
+.changes-node em,
+.changes-node small,
+.changes-step header p,
+.changes-frame small {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.changes-since__summary strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 28px;
+}
+
+.changes-since__nodes,
+.changes-node__body,
+.changes-frame__changes {
+  display: grid;
+  gap: 10px;
+}
+
+.changes-node {
+  border-left: 6px solid var(--changed);
+}
+
+.changes-node > summary,
+.changes-frame > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.changes-node summary span,
+.changes-frame summary {
+  min-width: 0;
+}
+
+.changes-node summary strong,
+.changes-frame summary strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.changes-node__body {
+  border-top: 1px solid var(--line);
+  padding: 12px;
+}
+
+.changes-step {
+  padding: 12px;
+}
+
+.changes-step header {
+  margin-bottom: 10px;
+}
+
+.changes-step h2 {
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.changes-step h3 {
+  font-size: 12px;
+  margin: 12px 0 8px;
+  text-transform: uppercase;
+}
+
+.changes-step__whole {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-bottom: 0;
+}
+
+.changes-frame {
+  border-left: 4px solid var(--changed);
+  margin-bottom: 8px;
+}
+
+.changes-frame__changes {
+  border-top: 1px solid var(--line);
+  padding: 10px;
+}
+
+.changes-change {
+  background: var(--panel-strong);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr);
+  margin: 0 0 8px;
+  padding: 10px;
+}
+
+.changes-change dt {
+  font-weight: 800;
+}
+
+.changes-change dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.changes-change dd span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
 @media (max-width: 860px) {
   main {
     width: min(100vw - 24px, 1180px);
@@ -333,7 +500,9 @@ code {
 
   .diff-result__summary,
   .diff-result__files,
-  .diff-change {
+  .diff-change,
+  .changes-since__summary,
+  .changes-change {
     grid-template-columns: 1fr;
   }
 }

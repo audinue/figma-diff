@@ -13,4 +13,5 @@ export type GetFileOptions = {
 export interface FigmaAPI {
   getFile(options: GetFileOptions): Promise<GetFileResponse>;
   getFileVersions(): Promise<GetFileVersionsResponse>;
+  clearFileVersionsCache?(): Promise<void>;
 }

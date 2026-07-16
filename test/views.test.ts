@@ -14,10 +14,16 @@ describe("renderVersionListView", () => {
     const markup = renderVersionListView(sampleVersions);
 
     expect(markup).toContain("<main class=\"version-list\">");
+    expect(markup).toContain("action=\"/clear-versions\" method=\"post\"");
+    expect(markup).toContain("Clear versions");
     expect(markup).toContain(
       "/diff?version=2369347764861345445",
     );
-    expect(markup).toContain("Compare current file with this version");
+    expect(markup).toContain(
+      "/changes-since?version=2369347764861345445",
+    );
+    expect(markup).toContain("Compare with current");
+    expect(markup).toContain("Changes since this version");
     expect(markup).toContain("Jun 26,");
   });
 
@@ -36,7 +42,7 @@ describe("renderVersionListView", () => {
       body: renderVersionListView(sampleVersions),
     });
 
-    expect(markup).toContain(".version-list__item a:visited");
+    expect(markup).toContain(".version-list__actions a:visited");
     expect(markup).toContain("--visited:");
   });
 });

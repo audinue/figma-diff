@@ -62,6 +62,15 @@ describe("InMemoryCacheStorage", () => {
     expect(await storage.get("name")).toBe("figma");
     expect(await storage.get("missing")).toBeUndefined();
   });
+
+  test("deletes values by key", async () => {
+    const storage = new InMemoryCacheStorage();
+
+    await storage.set("name", "figma");
+    await storage.delete("name");
+
+    expect(await storage.get("name")).toBeUndefined();
+  });
 });
 
 describe("CachedFigmaAPI", () => {
@@ -88,6 +97,20 @@ describe("CachedFigmaAPI", () => {
     await cachedAPI.getFileVersions();
 
     expect(figmaAPI.versionsCalls).toBe(1);
+  });
+
+  test("clears only file versions cache", async () => {
+    const figmaAPI = new CountingFigmaAPI();
+    const cachedAPI = new CachedFigmaAPI(new InMemoryCacheStorage(), figmaAPI);
+
+    await cachedAPI.getFile({ depth: 3 });
+    await cachedAPI.getFileVersions();
+    await cachedAPI.clearFileVersionsCache();
+    await cachedAPI.getFile({ depth: 3 });
+    await cachedAPI.getFileVersions();
+
+    expect(figmaAPI.fileCalls).toBe(1);
+    expect(figmaAPI.versionsCalls).toBe(2);
   });
 
   test("caches different file versions separately", async () => {

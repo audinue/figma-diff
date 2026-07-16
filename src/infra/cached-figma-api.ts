@@ -25,6 +25,10 @@ export class CachedFigmaAPI implements FigmaAPI {
     return this.getOrSet(versionsCacheKey, () => this.figmaAPI.getFileVersions());
   }
 
+  async clearFileVersionsCache(): Promise<void> {
+    await this.cacheStorage.delete(versionsCacheKey);
+  }
+
   private async getOrSet<T>(key: string, fetchValue: () => Promise<T>): Promise<T> {
     const cached = await this.cacheStorage.get(key);
     if (cached !== undefined) {

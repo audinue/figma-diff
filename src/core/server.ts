@@ -1,3 +1,5 @@
+import { buildChangesSince } from "./changes-since";
+import { renderChangesSinceView } from "./changes-since-view";
 import { diffFigmaFiles } from "./figma-diff";
 import type { FigmaAPI } from "./figma-api";
 import { renderDiffResultView } from "./diff-result-view";
@@ -22,6 +24,11 @@ export function createFigmaDiffHandler(
 ): (request: Request) => Promise<Response> {
   return async (request) => {
     const url = new URL(request.url);
+
+    if (request.method === "POST" && url.pathname === "/clear-versions") {
+      await dependencies.figmaAPI.clearFileVersionsCache?.();
+      return redirectResponse("/");
+    }
 
     if (request.method !== "GET") {
       return htmlResponse(
@@ -99,6 +106,43 @@ export function createFigmaDiffHandler(
       );
     }
 
+    if (url.pathname === "/changes-since") {
+      const selectedVersion = url.searchParams.get("version");
+
+      if (selectedVersion === null) {
+        return htmlResponse(
+          renderErrorPage(
+            "Missing version",
+            "Changes since needs a version query param.",
+          ),
+          400,
+        );
+      }
+
+      try {
+        const changes = await buildChangesSince(dependencies.figmaAPI, {
+          version: selectedVersion,
+          depth: figmaFileDepth,
+        });
+
+        return htmlResponse(
+          renderLayoutView({
+            title: "Figma Changes Since",
+            body: renderChangesSinceView(changes),
+          }),
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith("Figma version not found:")) {
+          return htmlResponse(
+            renderErrorPage("Version not found", error.message),
+            404,
+          );
+        }
+
+        throw error;
+      }
+    }
+
     return htmlResponse(
       renderErrorPage("Not found", `${url.pathname} does not exist.`),
       404,
@@ -123,6 +167,15 @@ function htmlResponse(markup: string, status = 200): Response {
     status,
     headers: {
       "content-type": "text/html; charset=utf-8",
+    },
+  });
+}
+
+function redirectResponse(location: string): Response {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location,
     },
   });
 }
