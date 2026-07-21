@@ -105,6 +105,7 @@ describe("Figma diff server", () => {
     expect(html).toContain("Version steps");
     expect(html).toContain("<strong>2</strong>");
     expect(html).toContain("<details class=\"changes-node\" open>");
+    expect(html).toContain("<details class=\"changes-step\" open>");
     expect(html).toContain("Office Agent Portal - Registration | Onboarding | Contact");
     expect(html).toContain("Receiving");
     expect(html).toContain("Middle");

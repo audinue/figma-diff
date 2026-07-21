@@ -383,7 +383,7 @@ code {
 .changes-since__summary span,
 .changes-node em,
 .changes-node small,
-.changes-step header p,
+.changes-step > summary p,
 .changes-frame small {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -407,7 +407,8 @@ code {
 }
 
 .changes-node > summary,
-.changes-frame > summary {
+.changes-frame > summary,
+.changes-step > summary {
   align-items: center;
   cursor: pointer;
   display: flex;
@@ -432,12 +433,8 @@ code {
   padding: 12px;
 }
 
-.changes-step {
+.changes-step > summary {
   padding: 12px;
-}
-
-.changes-step header {
-  margin-bottom: 10px;
 }
 
 .changes-step h2 {
@@ -449,6 +446,11 @@ code {
   font-size: 12px;
   margin: 12px 0 8px;
   text-transform: uppercase;
+}
+
+.changes-step__body {
+  border-top: 1px solid var(--line);
+  padding: 0 12px 12px;
 }
 
 .changes-step__whole {

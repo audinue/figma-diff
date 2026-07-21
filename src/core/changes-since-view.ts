@@ -59,7 +59,7 @@ function renderTopLevelNode(
         <em>${node.steps.length} steps</em>
       </summary>
       <div class="changes-node__body">
-        ${node.steps.map((step) => raw(renderNodeStep(step, options)))}
+        ${node.steps.map((step, index) => raw(renderNodeStep(step, options, index === 0)))}
       </div>
     </details>
   `;
@@ -68,15 +68,18 @@ function renderTopLevelNode(
 function renderNodeStep(
   step: ChangesSinceTopLevelNodeStep,
   options: ChangesSinceViewOptions,
+  open: boolean,
 ): string {
   return html`
-    <article class="changes-step">
-      <header>
+    <details class="changes-step" ${raw(open ? "open" : "")}>
+      <summary>
         <h2>${versionLabel(step.before)} -> ${versionLabel(step.after)}</h2>
         <p>${formatVersionDate(step.before.createdAt)} -> ${formatVersionDate(step.after.createdAt)}</p>
-      </header>
-      ${raw(renderPageChange(step, options))}
-    </article>
+      </summary>
+      <div class="changes-step__body">
+        ${raw(renderPageChange(step, options))}
+      </div>
+    </details>
   `;
 }
 
