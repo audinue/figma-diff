@@ -30,6 +30,26 @@ describe("Figma diff server", () => {
     expect(html).toContain("/changes-since?version=2369347764861345445");
   });
 
+  test("renders agent-readable version list JSON", async () => {
+    const server = createTestServer();
+
+    const response = await fetch(new URL("/versions.json", server.url));
+    const payload = await response.json() as {
+      kind: string;
+      versionCount: number;
+      versions: { diffUrl: string; changesSinceUrl: string }[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    expect(payload.kind).toBe("figma-versions");
+    expect(payload.versionCount).toBe(sampleVersions.versions.length);
+    expect(payload.versions[0]?.diffUrl).toBe("/diff.json?version=2369347764861345445");
+    expect(payload.versions[0]?.changesSinceUrl).toBe(
+      "/changes-since.json?version=2369347764861345445",
+    );
+  });
+
   test("renders diff page between current file and selected version", async () => {
     const server = createTestServer();
 
@@ -48,6 +68,44 @@ describe("Figma diff server", () => {
     expect(html).toContain("2366075322438973666 -> 2369347764861345445");
   });
 
+  test("renders agent-readable diff JSON", async () => {
+    const server = createTestServer();
+
+    const response = await fetch(
+      new URL(
+        "/diff.json?version=2366075322438973666",
+        server.url,
+      ),
+    );
+    const payload = await response.json() as {
+      kind: string;
+      summary: { counts: { framesChanged: number } };
+      changedPages: {
+        name: string;
+        frames: {
+          id: string;
+          afterFigmaUrl: string;
+          changes?: { field: string; summary: string }[];
+        }[];
+      }[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    expect(payload.kind).toBe("figma-diff");
+    expect(payload.summary.counts.framesChanged).toBe(1);
+    expect(payload.changedPages[0]?.name).toBe("Office Agent Portal - Registration | Onboarding | Contact");
+    const changedFrame = payload.changedPages
+      .flatMap((page) => page.frames)
+      .find((frame) => frame.changes?.some((change) => change.field === "bounds") === true);
+    expect(changedFrame).toBeDefined();
+    expect(changedFrame?.afterFigmaUrl.startsWith(
+      "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?node-id=",
+    )).toBe(true);
+    expect(changedFrame?.changes?.[0]?.field).toBe("bounds");
+    expect(changedFrame?.changes?.[0]?.summary).toContain("bounds:");
+  });
+
   test("returns 400 when diff params are missing", async () => {
     const server = createTestServer();
 
@@ -56,6 +114,17 @@ describe("Figma diff server", () => {
 
     expect(response.status).toBe(400);
     expect(html).toContain("Missing versions");
+  });
+
+  test("returns JSON error when diff JSON params are missing", async () => {
+    const server = createTestServer();
+
+    const response = await fetch(new URL("/diff.json", server.url));
+    const payload = await response.json() as { kind: string; title: string };
+
+    expect(response.status).toBe(400);
+    expect(payload.kind).toBe("error");
+    expect(payload.title).toBe("Missing versions");
   });
 
   test("renders chained changes since selected version", async () => {
@@ -117,6 +186,67 @@ describe("Figma diff server", () => {
     expect(html).not.toContain(
       "version-id=2369347764861345445&amp;node-id=4780-383317",
     );
+  });
+
+  test("renders agent-readable changes-since JSON", async () => {
+    const middleFile = cloneFile(sampleCurrentFile);
+    middleFile.version = "2367000000000000000";
+    middleFile.lastModified = "2026-06-20T10:00:00Z";
+    setFrameX(middleFile, "4780:383317", -412);
+
+    const versions = {
+      ...sampleVersions,
+      versions: [
+        sampleVersions.versions[0],
+        {
+          id: middleFile.version,
+          created_at: "2026-06-20T10:00:00Z",
+          label: "Middle",
+          description: null,
+          user: {
+            handle: "Eurlich Allan",
+            img_url: "",
+            id: "617230080296806206",
+          },
+          thumbnail_url: "",
+        },
+        sampleVersions.versions[1],
+      ],
+    } as GetFileVersionsResponse;
+    const server = createTestServer({
+      currentFile: sampleCurrentFile,
+      versions,
+      filesByVersion: {
+        [sampleOlderFile.version]: sampleOlderFile,
+        [middleFile.version]: middleFile,
+      },
+    });
+
+    const response = await fetch(
+      new URL(
+        "/changes-since.json?version=2366075322438973666",
+        server.url,
+      ),
+    );
+    const payload = await response.json() as {
+      kind: string;
+      summary: {
+        versionSteps: number;
+        topLevelNodesChanged: number;
+        totals: { framesChanged: number };
+      };
+      topLevelNodes: { name: string; steps: unknown[] }[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    expect(payload.kind).toBe("figma-changes-since");
+    expect(payload.summary.versionSteps).toBe(2);
+    expect(payload.summary.totals.framesChanged).toBe(1);
+    const changedNode = payload.topLevelNodes.find((node) =>
+      node.name === "Office Agent Portal - Registration | Onboarding | Contact"
+    );
+    expect(changedNode?.steps).toHaveLength(1);
   });
 
   test("returns 400 when changes-since version is missing", async () => {

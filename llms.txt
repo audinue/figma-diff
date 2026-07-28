@@ -1,0 +1,79 @@
+# figma-diff agent guide
+
+figma-diff is a local Bun/TypeScript server for comparing Figma file versions.
+
+Use JSON endpoints for agents. HTML endpoints are for humans.
+
+## Run
+
+```bash
+PORT=3434 bun src/index.ts
+```
+
+Default port is 3000 if `PORT` is not set.
+
+The live server uses SQLite cache at `figma-cache.sqlite` through `CachedFigmaAPI`.
+Avoid clearing cache or forcing uncached Figma requests unless the user asks for a refresh.
+
+## JSON endpoints
+
+- `GET /versions.json`
+  - Returns `kind: "figma-versions"`, `versionCount`, and `versions`.
+  - Each version includes `id`, `label`, `description`, `createdAt`, `user`, `diffUrl`, and `changesSinceUrl`.
+
+- `GET /diff.json?version=<version-id>`
+  - Compares selected historical version as `before` against cached/live current file as `after`.
+  - Returns `kind: "figma-diff"`, `summary`, `warnings`, and `changedPages`.
+
+- `GET /diff.json?before=<version-id>&after=<version-id>`
+  - Compares two historical versions.
+  - Returns the same shape as `/diff.json?version=...`.
+
+- `GET /changes-since.json?version=<version-id>`
+  - Builds chained diffs from selected version to current.
+  - Returns `kind: "figma-changes-since"`, `selected`, `current`, `summary`, `warnings`, and `topLevelNodes`.
+
+## How to answer "what changed in Figma?"
+
+1. Fetch `/versions.json`.
+2. Pick the relevant version id from the user context, latest relevant version, or a version URL.
+3. Fetch `/diff.json?version=<version-id>` for a simple before/current answer.
+4. Fetch `/changes-since.json?version=<version-id>` when the user asks what changed since a point in time.
+5. Read `warnings` before finalizing. If stale-cache warning exists, say the result is cache-derived and may not be latest.
+6. Summarize counts first, then pages/nodes/frames, then field-level changes.
+7. Include Figma node links when useful.
+
+## Useful response fields
+
+- `/diff.json`
+  - `summary.counts`
+  - `summary.before.version`, `summary.after.version`
+  - `summary.before.lastModified`, `summary.after.lastModified`
+  - `warnings[]`
+  - `changedPages[].name`
+  - `changedPages[].frames[].status`
+  - `changedPages[].frames[].name`
+  - `changedPages[].frames[].changes[].summary`
+  - `changedPages[].frames[].figmaUrl`
+  - `changedPages[].frames[].beforeFigmaUrl`
+  - `changedPages[].frames[].afterFigmaUrl`
+
+- `/changes-since.json`
+  - `summary.versionSteps`
+  - `summary.topLevelNodesChanged`
+  - `summary.totals`
+  - `warnings[]`
+  - `topLevelNodes[].name`
+  - `topLevelNodes[].steps[].before`
+  - `topLevelNodes[].steps[].after`
+  - `topLevelNodes[].steps[].page.frames[].changes[].summary`
+
+## Example curl
+
+```bash
+curl -sS "http://localhost:3434/versions.json"
+curl -sS "http://localhost:3434/diff.json?version=2376738244480113867"
+curl -sS "http://localhost:3434/changes-since.json?version=2376738244480113867"
+```
+
+If `warnings` contains stale-cache text, do not claim the answer is latest without a cache/API refresh.

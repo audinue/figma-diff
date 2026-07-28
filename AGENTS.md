@@ -49,6 +49,52 @@ Generate view screenshots:
 bun run view-test
 ```
 
+## Agent Usage
+
+Saat user nanya semacam "figma ada perubahan apa aja?", pakai endpoint JSON dulu, bukan scrape HTML.
+
+Recommended flow:
+
+1. Start server lokal:
+
+```bash
+PORT=3434 bun src/index.ts
+```
+
+2. Ambil daftar version:
+
+```bash
+curl -sS "http://localhost:3434/versions.json"
+```
+
+3. Pilih version yang relevan, lalu ambil diff ringkas:
+
+```bash
+curl -sS "http://localhost:3434/diff.json?version=<version-id>"
+```
+
+4. Kalau user minta perubahan bertahap sejak version tertentu:
+
+```bash
+curl -sS "http://localhost:3434/changes-since.json?version=<version-id>"
+```
+
+JSON endpoints:
+
+- `/versions.json`: daftar version, createdAt, user, dan URL JSON lanjutan.
+- `/diff.json?version=<version-id>`: selected version sebagai `before`, current file sebagai `after`.
+- `/diff.json?before=<version-id>&after=<version-id>`: compare dua historical versions.
+- `/changes-since.json?version=<version-id>`: chain perubahan dari selected version sampai current.
+
+Agent response guidance:
+
+- Mulai dari `summary.counts` atau `summary.totals`, lalu sebut page/node/frame yang berubah.
+- Pakai `changedPages[].frames[].changes[].summary` atau `topLevelNodes[].steps[].page.frames[].changes[].summary` untuk penjelasan field-level.
+- Sertakan `figmaUrl`, `beforeFigmaUrl`, atau `afterFigmaUrl` kalau user butuh link inspect.
+- Kalau JSON punya `warnings`, sebutkan apa adanya. Warning stale cache berarti hasil belum boleh diklaim sebagai latest tanpa refresh cache/API.
+- Untuk hemat Figma API, pakai version yang sudah ada di cache kalau cuma eksplorasi. Jangan POST `/clear-versions` kecuali user memang minta refresh daftar version.
+- HTML routes (`/versions`, `/diff`, `/changes-since`) tetap buat manusia.
+
 ## Invariants
 
 - Runtime is Bun.
@@ -57,8 +103,10 @@ bun run view-test
   - `getFile({ version?, depth })`
   - `getFileVersions()`
 - `/diff` routes request Figma files with `depth=3`.
+- `/diff.json` and `/changes-since.json` routes request Figma files with `depth=3`.
 - `FetchFigmaAPI.getFile()` must pass through the requested `depth`.
 - `/diff?version=<version-id>` compares selected version as `before` vs current file as `after`.
+- `/diff.json?version=<version-id>` has the same comparison direction as `/diff?version=<version-id>`.
 - Figma links for historical/selected `before` nodes include `version-id`.
 - Figma links for current `after` nodes must not include `version-id`.
 - Default live server cache is SQLite via `SqliteCacheStorage`.

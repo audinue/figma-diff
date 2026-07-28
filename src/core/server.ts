@@ -2,6 +2,11 @@ import { buildChangesSince } from "./changes-since";
 import { renderChangesSinceView } from "./changes-since-view";
 import { diffFigmaFiles } from "./figma-diff";
 import type { FigmaAPI } from "./figma-api";
+import {
+  buildAgentChangesSinceJson,
+  buildAgentDiffJson,
+  buildAgentVersionsJson,
+} from "./agent-json";
 import { renderDiffResultView } from "./diff-result-view";
 import { renderLayoutView } from "./layout-view";
 import { renderVersionListView } from "./version-list-view";
@@ -47,10 +52,16 @@ export function createFigmaDiffHandler(
       );
     }
 
-    if (url.pathname === "/diff") {
+    if (url.pathname === "/versions.json") {
+      const versions = await dependencies.figmaAPI.getFileVersions();
+      return jsonResponse(buildAgentVersionsJson(versions));
+    }
+
+    if (url.pathname === "/diff" || url.pathname === "/diff.json") {
       const selectedVersion = url.searchParams.get("version");
       const beforeVersion = url.searchParams.get("before");
       const afterVersion = url.searchParams.get("after");
+      const wantsJson = url.pathname === "/diff.json";
 
       if (selectedVersion !== null) {
         const [selected, current] = await Promise.all([
@@ -61,6 +72,13 @@ export function createFigmaDiffHandler(
           dependencies.figmaAPI.getFile({ depth: figmaFileDepth }),
         ]);
         const diff = diffFigmaFiles(selected, current);
+
+        if (wantsJson) {
+          return jsonResponse(buildAgentDiffJson(diff, {
+            fileKey: dependencies.fileKey,
+            fileName: dependencies.fileName,
+          }));
+        }
 
         return htmlResponse(
           renderLayoutView({
@@ -74,6 +92,17 @@ export function createFigmaDiffHandler(
       }
 
       if (beforeVersion === null || afterVersion === null) {
+        if (wantsJson) {
+          return jsonResponse(
+            {
+              kind: "error",
+              title: "Missing versions",
+              message: "Diff needs version, or before and after query params.",
+            },
+            400,
+          );
+        }
+
         return htmlResponse(
           renderErrorPage(
             "Missing versions",
@@ -95,6 +124,13 @@ export function createFigmaDiffHandler(
       ]);
       const diff = diffFigmaFiles(before, after);
 
+      if (wantsJson) {
+        return jsonResponse(buildAgentDiffJson(diff, {
+          fileKey: dependencies.fileKey,
+          fileName: dependencies.fileName,
+        }));
+      }
+
       return htmlResponse(
         renderLayoutView({
           title: "Figma Diff",
@@ -106,10 +142,22 @@ export function createFigmaDiffHandler(
       );
     }
 
-    if (url.pathname === "/changes-since") {
+    if (url.pathname === "/changes-since" || url.pathname === "/changes-since.json") {
       const selectedVersion = url.searchParams.get("version");
+      const wantsJson = url.pathname === "/changes-since.json";
 
       if (selectedVersion === null) {
+        if (wantsJson) {
+          return jsonResponse(
+            {
+              kind: "error",
+              title: "Missing version",
+              message: "Changes since needs a version query param.",
+            },
+            400,
+          );
+        }
+
         return htmlResponse(
           renderErrorPage(
             "Missing version",
@@ -125,6 +173,13 @@ export function createFigmaDiffHandler(
           depth: figmaFileDepth,
         });
 
+        if (wantsJson) {
+          return jsonResponse(buildAgentChangesSinceJson(changes, {
+            fileKey: dependencies.fileKey,
+            fileName: dependencies.fileName,
+          }));
+        }
+
         return htmlResponse(
           renderLayoutView({
             title: "Figma Changes Since",
@@ -136,6 +191,17 @@ export function createFigmaDiffHandler(
         );
       } catch (error) {
         if (error instanceof Error && error.message.startsWith("Figma version not found:")) {
+          if (wantsJson) {
+            return jsonResponse(
+              {
+                kind: "error",
+                title: "Version not found",
+                message: error.message,
+              },
+              404,
+            );
+          }
+
           return htmlResponse(
             renderErrorPage("Version not found", error.message),
             404,
@@ -162,6 +228,15 @@ export function createFigmaDiffServer(
     hostname: options.hostname,
     idleTimeout: 0,
     fetch: createFigmaDiffHandler(dependencies),
+  });
+}
+
+function jsonResponse(value: unknown, status = 200): Response {
+  return new Response(JSON.stringify(value, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+    },
   });
 }
 
