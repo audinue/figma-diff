@@ -19,6 +19,11 @@ export type AgentJsonOptions = {
   fileName?: string;
 };
 
+type FigmaLinkVersions = {
+  beforeVersion?: string;
+  afterVersion?: string;
+};
+
 export function buildAgentVersionsJson(
   versionsResponse: GetFileVersionsResponse,
 ): unknown {
@@ -47,7 +52,11 @@ export function buildAgentDiffJson(
     warnings: diffWarnings(diff),
     changedPages: diff.pages
       .filter((page) => page.status !== "unchanged")
-      .map((page) => serializePage(page, diff, options)),
+      .map((page) =>
+        serializePage(page, {
+          beforeVersion: diff.summary.before.version,
+        }, options),
+      ),
   };
 }
 
@@ -66,7 +75,7 @@ export function buildAgentChangesSinceJson(
     },
     warnings: changesSinceWarnings(result),
     topLevelNodes: result.topLevelNodes.map((node) =>
-      serializeTopLevelNode(node, options),
+      serializeTopLevelNode(node, options, result.current.id),
     ),
   };
 }
@@ -74,23 +83,34 @@ export function buildAgentChangesSinceJson(
 function serializeTopLevelNode(
   node: ChangesSinceTopLevelNode,
   options: AgentJsonOptions,
+  currentVersionId: string,
 ): unknown {
   return {
     id: node.id,
     name: node.name,
     type: node.type,
-    steps: node.steps.map((step) => serializeTopLevelNodeStep(step, options)),
+    steps: node.steps.map((step) =>
+      serializeTopLevelNodeStep(step, options, currentVersionId),
+    ),
   };
 }
 
 function serializeTopLevelNodeStep(
   step: ChangesSinceTopLevelNodeStep,
   options: AgentJsonOptions,
+  currentVersionId: string,
 ): unknown {
+  const afterVersion = step.after.id === currentVersionId
+    ? undefined
+    : step.after.id;
+
   return {
     before: serializeVersion(step.before),
     after: serializeVersion(step.after),
-    page: serializePage(step.page, undefined, options),
+    page: serializePage(step.page, {
+      beforeVersion: step.before.id,
+      afterVersion,
+    }, options),
   };
 }
 
@@ -104,11 +124,13 @@ function serializeVersion(version: ChangesSinceVersion): unknown {
 
 function serializePage(
   page: FigmaDiffPage,
-  diff: FigmaDiffResult | undefined,
+  versions: FigmaLinkVersions,
   options: AgentJsonOptions,
 ): unknown {
   if (page.status === "added" || page.status === "removed") {
-    const version = page.status === "removed" ? diff?.summary.before.version : undefined;
+    const version = page.status === "removed"
+      ? versions.beforeVersion
+      : versions.afterVersion;
 
     return {
       status: page.status,
@@ -137,18 +159,18 @@ function serializePage(
     id: page.page.id,
     name: page.page.name,
     beforeName: page.page.beforeName,
-    beforeFigmaUrl: diff === undefined
+    beforeFigmaUrl: versions.beforeVersion === undefined
       ? undefined
-      : figmaNodeUrl(options, page.page.id, diff.summary.before.version),
-    afterFigmaUrl: figmaNodeUrl(options, page.page.id),
+      : figmaNodeUrl(options, page.page.id, versions.beforeVersion),
+    afterFigmaUrl: figmaNodeUrl(options, page.page.id, versions.afterVersion),
     pageChanges: page.pageChanges.map(serializeChange),
-    frames: page.frames.map((frame) => serializeFrame(frame, diff, options)),
+    frames: page.frames.map((frame) => serializeFrame(frame, versions, options)),
   };
 }
 
 function serializeFrame(
   frame: FigmaDiffFrame,
-  diff: FigmaDiffResult | undefined,
+  versions: FigmaLinkVersions,
   options: AgentJsonOptions,
 ): unknown {
   if (frame.status === "changed") {
@@ -157,15 +179,17 @@ function serializeFrame(
       id: frame.id,
       name: frame.name,
       beforeName: frame.beforeName,
-      beforeFigmaUrl: diff === undefined
+      beforeFigmaUrl: versions.beforeVersion === undefined
         ? undefined
-        : figmaNodeUrl(options, frame.id, diff.summary.before.version),
-      afterFigmaUrl: figmaNodeUrl(options, frame.id),
+        : figmaNodeUrl(options, frame.id, versions.beforeVersion),
+      afterFigmaUrl: figmaNodeUrl(options, frame.id, versions.afterVersion),
       changes: frame.changes.map(serializeChange),
     };
   }
 
-  const version = frame.status === "removed" ? diff?.summary.before.version : undefined;
+  const version = frame.status === "removed"
+    ? versions.beforeVersion
+    : versions.afterVersion;
 
   return {
     status: frame.status,

@@ -36,7 +36,7 @@ export function renderChangesSinceView(
         : raw(html`
           <section class="changes-since__nodes" aria-label="Changed top-level nodes">
             ${result.topLevelNodes.map((node, index) =>
-              raw(renderTopLevelNode(node, options, index === 0)),
+              raw(renderTopLevelNode(node, options, result.current.id, index === 0)),
             )}
           </section>
         `)}
@@ -47,6 +47,7 @@ export function renderChangesSinceView(
 function renderTopLevelNode(
   node: ChangesSinceTopLevelNode,
   options: ChangesSinceViewOptions,
+  currentVersionId: string,
   open: boolean,
 ): string {
   return html`
@@ -59,7 +60,9 @@ function renderTopLevelNode(
         <em>${node.steps.length} steps</em>
       </summary>
       <div class="changes-node__body">
-        ${node.steps.map((step, index) => raw(renderNodeStep(step, options, index === 0)))}
+        ${node.steps.map((step, index) =>
+          raw(renderNodeStep(step, options, currentVersionId, index === 0)),
+        )}
       </div>
     </details>
   `;
@@ -68,6 +71,7 @@ function renderTopLevelNode(
 function renderNodeStep(
   step: ChangesSinceTopLevelNodeStep,
   options: ChangesSinceViewOptions,
+  currentVersionId: string,
   open: boolean,
 ): string {
   return html`
@@ -77,7 +81,7 @@ function renderNodeStep(
         <p>${formatVersionDate(step.before.createdAt)} -> ${formatVersionDate(step.after.createdAt)}</p>
       </summary>
       <div class="changes-step__body">
-        ${raw(renderPageChange(step, options))}
+        ${raw(renderPageChange(step, options, currentVersionId))}
       </div>
     </details>
   `;
@@ -86,9 +90,15 @@ function renderNodeStep(
 function renderPageChange(
   step: ChangesSinceTopLevelNodeStep,
   options: ChangesSinceViewOptions,
+  currentVersionId: string,
 ): string {
   if ("frames" in step.page) {
-    return renderChangedPage(step.page.pageChanges, step.page.frames, options);
+    return renderChangedPage(
+      step.page.pageChanges,
+      step.page.frames,
+      options,
+      versionParam(step.after.id, currentVersionId),
+    );
   }
 
   return renderWholePageChange(step.page.status, step.page.page.topFrames.length);
@@ -106,6 +116,7 @@ function renderChangedPage(
   pageChanges: FigmaDiffChange[],
   frames: FigmaDiffFrame[],
   options: ChangesSinceViewOptions,
+  afterVersion: string | undefined,
 ): string {
   return html`
     ${pageChanges.length === 0
@@ -121,7 +132,7 @@ function renderChangedPage(
       : raw(html`
         <section class="changes-step__section">
           <h3>Child nodes</h3>
-          ${frames.map((frame) => raw(renderFrame(frame, options)))}
+          ${frames.map((frame) => raw(renderFrame(frame, options, afterVersion)))}
         </section>
       `)}
   `;
@@ -130,6 +141,7 @@ function renderChangedPage(
 function renderFrame(
   frame: FigmaDiffFrame,
   options: ChangesSinceViewOptions,
+  afterVersion: string | undefined,
 ): string {
   if (frame.status === "changed") {
     return html`
@@ -139,7 +151,7 @@ function renderFrame(
             <strong>~ ${frame.beforeName === frame.name ? frame.name : `${frame.beforeName} -> ${frame.name}`}</strong>
             <small>${frame.id}</small>
           </span>
-          <a class="changes-frame__button" href="${figmaNodeUrl(options, frame.id)}" target="_blank" rel="noreferrer">Open current frame</a>
+          <a class="changes-frame__button" href="${figmaNodeUrl(options, frame.id, afterVersion)}" target="_blank" rel="noreferrer">Open after frame</a>
         </summary>
         <div class="changes-frame__changes">
           ${frame.changes.map((change) => raw(renderChange(change)))}
@@ -156,7 +168,7 @@ function renderFrame(
           <small>${frame.frame.type} · ${frame.frame.id}</small>
         </span>
         ${frame.status === "added"
-          ? raw(html`<a class="changes-frame__button" href="${figmaNodeUrl(options, frame.frame.id)}" target="_blank" rel="noreferrer">Open current frame</a>`)
+          ? raw(html`<a class="changes-frame__button" href="${figmaNodeUrl(options, frame.frame.id, afterVersion)}" target="_blank" rel="noreferrer">Open after frame</a>`)
           : ""}
       </summary>
     </details>
@@ -199,11 +211,23 @@ function formatValue(value: FigmaDiffValue): string {
   return typeof value === "string" ? value : JSON.stringify(value);
 }
 
-function figmaNodeUrl(options: ChangesSinceViewOptions, nodeId: string): string {
+function versionParam(version: string, currentVersionId: string): string | undefined {
+  return version === currentVersionId ? undefined : version;
+}
+
+function figmaNodeUrl(
+  options: ChangesSinceViewOptions,
+  nodeId: string,
+  version?: string,
+): string {
   const filePath = options.fileName === undefined || options.fileName === ""
     ? encodeURIComponent(options.fileKey)
     : `${encodeURIComponent(options.fileKey)}/${encodeURIComponent(options.fileName)}`;
   const params = new URLSearchParams();
+
+  if (version !== undefined) {
+    params.set("version-id", version);
+  }
 
   params.set("node-id", nodeId.replaceAll(":", "-"));
 

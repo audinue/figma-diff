@@ -179,7 +179,10 @@ describe("Figma diff server", () => {
     expect(html).toContain("Receiving");
     expect(html).toContain("Middle");
     expect(html).toContain("2369347764861345445");
-    expect(html).toContain("Open current frame");
+    expect(html).toContain("Open after frame");
+    expect(html).toContain(
+      "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?version-id=2367000000000000000&amp;node-id=5646-20208",
+    );
     expect(html).toContain(
       "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?node-id=4780-383317",
     );
@@ -235,7 +238,20 @@ describe("Figma diff server", () => {
         topLevelNodesChanged: number;
         totals: { framesChanged: number };
       };
-      topLevelNodes: { name: string; steps: unknown[] }[];
+      topLevelNodes: {
+        name: string;
+        steps: {
+          before: { id: string };
+          after: { id: string };
+          page: {
+            frames: {
+              id: string;
+              figmaUrl?: string;
+              afterFigmaUrl?: string;
+            }[];
+          };
+        }[];
+      }[];
     };
 
     expect(response.status).toBe(200);
@@ -247,6 +263,21 @@ describe("Figma diff server", () => {
       node.name === "Office Agent Portal - Registration | Onboarding | Contact"
     );
     expect(changedNode?.steps).toHaveLength(1);
+    const intermediateAddedFrame = changedNode?.steps
+      .find((step) => step.after.id === "2367000000000000000")
+      ?.page.frames.find((frame) => frame.id === "5646:20208");
+    const receivingNode = payload.topLevelNodes.find((node) =>
+      node.name === "Receiving"
+    );
+    const currentFrame = receivingNode?.steps
+      .find((step) => step.after.id === "2369347764861345445")
+      ?.page.frames.find((frame) => frame.id === "4780:383317");
+    expect(intermediateAddedFrame?.figmaUrl).toBe(
+      "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?version-id=2367000000000000000&node-id=5646-20208",
+    );
+    expect(currentFrame?.afterFigmaUrl).toBe(
+      "https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/Example-Figma-File?node-id=4780-383317",
+    );
   });
 
   test("returns 400 when changes-since version is missing", async () => {
