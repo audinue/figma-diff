@@ -95,6 +95,35 @@ Agent response guidance:
 - Untuk hemat Figma API, pakai version yang sudah ada di cache kalau cuma eksplorasi. Jangan POST `/clear-versions` kecuali user memang minta refresh daftar version.
 - HTML routes (`/versions`, `/diff`, `/changes-since`) tetap buat manusia.
 
+## Last Check Log
+
+Tiap selesai ngecek "figma ada yang baru?", catat hasilnya di `last-check.json` (root repo, di-gitignore karena isinya metadata file Figma private).
+
+- Sebelum ngecek, baca `last-check.json` kalau ada. Sebut ke user kapan terakhir dicek dan version apa yang waktu itu jadi latest.
+- Kalau latest version sekarang beda dari `latestVersionId` terakhir, compare `before=<latestVersionId terakhir>&after=<latest sekarang>` biar semua perubahan sejak terakhir dicek kebaca, bukan cuma dua version terbaru. Kalau sama, cukup compare dua version terbaru kayak biasa dan bilang belum ada version baru sejak terakhir dicek.
+- Setelah ngecek, append satu entry ke array `checks` (jangan timpa entry lama):
+
+```json
+{
+  "checks": [
+    {
+      "checkedAt": "2026-11-24T13:30:00Z",
+      "fileName": "<nama file Figma>",
+      "latestVersionId": "<id>",
+      "latestVersionCreatedAt": "<createdAt>",
+      "latestVersionUser": "<user>",
+      "comparedBefore": "<id>",
+      "comparedAfter": "<id>",
+      "counts": { "pagesChanged": 0, "framesAdded": 0, "framesRemoved": 0, "framesChanged": 0 },
+      "warnings": [],
+      "note": "<ringkasan satu kalimat>"
+    }
+  ]
+}
+```
+
+- `checkedAt` pakai waktu UTC beneran dari `date -u +%Y-%m-%dT%H:%M:%SZ`, jangan ngarang.
+
 ## Invariants
 
 - Runtime is Bun.
